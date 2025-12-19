@@ -3,10 +3,16 @@ from flask import Flask, render_template, request, jsonify
 from groq import Groq
 from dotenv import load_dotenv
 
+# Charger les variables d'environnement (.env en local, Variables Config sur Render)
 load_dotenv()
 
-app = Flask(__name__)
+# Configuration explicite des dossiers pour éviter l'erreur TemplateNotFound sur Render
+base_dir = os.path.abspath(os.path.dirname(__file__))
+template_dir = os.path.join(base_dir, 'templates')
 
+app = Flask(__name__, template_folder=template_dir)
+
+# Initialisation Groq
 api_key = os.getenv("GROQ_API_KEY")
 client = Groq(api_key=api_key)
 
@@ -30,6 +36,9 @@ FONCTIONNEMENT :
 
 @app.route('/')
 def index():
+    # Vérification de l'existence du fichier pour le debug Render
+    if not os.path.exists(os.path.join(template_dir, 'index.html')):
+        return "Erreur : Le fichier templates/index.html est introuvable sur le serveur.", 500
     return render_template('index.html')
 
 @app.route('/chat', methods=['POST'])
@@ -60,5 +69,6 @@ def chat():
         }), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    # Configuration spécifique pour Render (0.0.0.0 et port dynamique)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port, debug=False)
